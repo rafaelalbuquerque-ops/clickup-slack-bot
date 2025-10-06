@@ -2,8 +2,8 @@ name: ClickUp Slack Bot (hourly)
 
 on:
   schedule:
-    - cron: "0 * * * *"   # roda todo início de hora (UTC)
-  workflow_dispatch:       # permite executar manualmente também
+    - cron: "0 11-23 * * *"   # 08h–20h horário de Brasília (UTC−3)
+  workflow_dispatch:
 
 jobs:
   run-bot:
