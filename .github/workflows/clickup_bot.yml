@@ -2,7 +2,7 @@ name: ClickUp Slack Bot (hourly)
 
 on:
   schedule:
-    - cron: "0 11-23 * * *"   # 08h–20h horário de Brasília (UTC−3)
+    - cron: "0 11-23 * * *"   # executa de 08h a 20h (horário de Brasília)
   workflow_dispatch:
 
 jobs:
@@ -29,4 +29,6 @@ jobs:
           CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
           CLICKUP_LIST_IDS: ${{ secrets.CLICKUP_LIST_IDS }}
         run: |
+          echo "🕐 Iniciando execução em $(date -u) UTC / $(TZ='America/Sao_Paulo' date) BR"
           python bot_clickup_produto_horario.py
+          echo "✅ Finalizado em $(date -u) UTC / $(TZ='America/Sao_Paulo' date) BR"
