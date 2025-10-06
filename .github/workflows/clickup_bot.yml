@@ -1,0 +1,32 @@
+name: ClickUp Slack Bot (hourly)
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # roda todo início de hora (UTC)
+  workflow_dispatch:       # permite executar manualmente também
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install requests pytz
+
+      - name: Run ClickUp Bot
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
+          CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
+          CLICKUP_LIST_IDS: ${{ secrets.CLICKUP_LIST_IDS }}
+        run: |
+          python bot_clickup_produto_horario.py
