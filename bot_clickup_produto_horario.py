@@ -170,7 +170,7 @@ def post_to_slack(counter_yesterday, counter_day, counter_hour, counter_closed_t
         {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
        # {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Fortaleza)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
-        {"type": "divider"},
+       # {"type": "divider"},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
     ]
 
@@ -218,4 +218,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
