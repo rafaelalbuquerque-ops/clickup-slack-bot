@@ -116,7 +116,7 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
 # --- Tabela ---
 def make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Aber. Mês", "Ontem", "Hoje", "Fech. Mês", "Fech. Hj"]
+    headers = ["Mês", "Ontem", "Hoje", "Fech. Mês", "Fech. Hj"]
 
     produtos = sorted(
         set(counter_month.keys())
@@ -234,3 +234,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
