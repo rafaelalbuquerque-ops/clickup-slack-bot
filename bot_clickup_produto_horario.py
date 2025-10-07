@@ -119,7 +119,7 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
 # --- Tabela ---
 def make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Abertos Mês", "Abertos Ontem", "Abertos Hoje", "Fechados Mês", "Fechados Hoje"]
+    headers = ["Mês", "Ontem", "Hoje", "Fechados Mês", "Fechados Hoje"]
 
     produtos = sorted(
         set(counter_month.keys())
@@ -191,7 +191,7 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
     )
 
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks por Produto"}},
+        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
     #    {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
@@ -245,4 +245,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
