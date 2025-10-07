@@ -233,10 +233,12 @@ def main():
     counter_today = count_by_product(tasks_today, mode="created")
 
     # Fechadas no mês
-    counter_closed_month = count_by_product(tasks_month, mode="closed", ini_ms=rng["mes_ini"], fim_ms=rng["agora"])
+    tasks_all = fetch_tasks_range(rng["mes_ini"], rng["agora"])
+    counter_closed_month = count_by_product(tasks_all, mode="closed", ini_ms=rng["mes_ini"], fim_ms=rng["agora"])
 
-    # Fechadas hoje
-    counter_closed_today = count_by_product(tasks_month, mode="closed", ini_ms=rng["hoje_ini"], fim_ms=rng["agora"])
+    # Fechadas hoje (consulta independente do mês de criação)
+    tasks_recent = fetch_tasks_range(rng["ontem_ini"], rng["agora"])
+    counter_closed_today = count_by_product(tasks_recent, mode="closed", ini_ms=rng["hoje_ini"], fim_ms=rng["agora"])
 
     post_to_slack(counter_month, counter_yest, counter_today, counter_closed_month, counter_closed_today)
     print(f"✅ Mensagem enviada ao Slack às {datetime.now(TZ).strftime('%H:%M')}.")
@@ -244,3 +246,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
