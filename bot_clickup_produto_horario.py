@@ -17,11 +17,13 @@ if not all([SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, CLICKUP_TOKEN]):
 
 # =======================================================================
 
-TZ = pytz.timezone("America/Fortaleza")
+# Usar São Paulo pois o GitHub Actions reconhece com mais confiabilidade
+TZ = pytz.timezone("America/Sao_Paulo")
 TIMEOUT = 30
 
 
-def _ms(dt): return int(dt.timestamp() * 1000)
+def _ms(dt): 
+    return int(dt.timestamp() * 1000)
 
 
 def ranges_ms():
@@ -120,7 +122,6 @@ def make_table(counter_yesterday, counter_day, counter_hour, counter_closed_toda
     header_prod = "Produto"
     headers = ["Ontem", "Hoje", "Hora", "Fechados"]
 
-    # Garante que todos os produtos presentes em qualquer contador sejam considerados
     produtos = sorted(
         set(counter_hour.keys())
         | set(counter_day.keys())
@@ -132,27 +133,24 @@ def make_table(counter_yesterday, counter_day, counter_hour, counter_closed_toda
     produtos = sorted(
         produtos,
         key=lambda p: (
-            -counter_day.get(p, 0),   # principal: valor da coluna Hoje (desc)
-            -counter_hour.get(p, 0),  # desempate: valor da Hora (desc)
-            -counter_closed_today.get(p, 0),  # desempate 2: fechados (desc)
-            p or ""                   # se tudo igual, ordena alfabeticamente
+            -counter_day.get(p, 0),
+            -counter_hour.get(p, 0),
+            -counter_closed_today.get(p, 0),
+            p or ""
         )
     )
 
-    # Calcula larguras automáticas
     col1 = max(len(header_prod), *(len(p or "Sem produto") for p in produtos)) if produtos else len(header_prod)
     col2 = max(len("Ontem"), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 1
     col3 = max(len("Hoje"), *(len(str(counter_day.get(p, 0))) for p in produtos)) + 1
     col4 = max(len("Hora"), *(len(str(counter_hour.get(p, 0))) for p in produtos)) + 1
     col5 = max(len("Fechados"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 1
 
-    # Cabeçalho e separador
     header_line = f"{header_prod:<{col1}} {headers[0]:>{col2}} {headers[1]:>{col3}} {headers[2]:>{col4}} {headers[3]:>{col5}}"
     sep_line = f"{'-'*col1} {'-'*col2} {'-'*col3} {'-'*col4} {'-'*col5}"
 
     linhas = [header_line, sep_line]
 
-    # Linhas dos produtos
     for p in produtos:
         v_yes = counter_yesterday.get(p, 0)
         v_day = counter_day.get(p, 0)
@@ -164,7 +162,6 @@ def make_table(counter_yesterday, counter_day, counter_hour, counter_closed_toda
         )
 
     return "```\n" + "\n".join(linhas) + "\n```"
-
 
 
 # --- Slack ---
@@ -180,9 +177,8 @@ def post_to_slack(counter_yesterday, counter_day, counter_hour, counter_closed_t
 
     blocks = [
         {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
-       # {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Fortaleza)"}]},
+        {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
-       # {"type": "divider"},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
     ]
 
@@ -230,6 +226,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
