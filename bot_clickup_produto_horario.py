@@ -117,14 +117,15 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
 
 
 # --- Tabela ---
-def make_table(counter_month, counter_yesterday, counter_today, counter_closed_today):
+def make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Mês", "Ontem", "Hoje", "Fechados"]
+    headers = ["Mês", "Ontem", "Hoje", "Fech. Mês", "Fech. Hj"]
 
     produtos = sorted(
         set(counter_month.keys())
         | set(counter_today.keys())
         | set(counter_yesterday.keys())
+        | set(counter_closed_month.keys())
         | set(counter_closed_today.keys())
     )
 
@@ -132,50 +133,66 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_t
     produtos = sorted(
         produtos,
         key=lambda p: (
-            -counter_month.get(p, 0),       # principal: valor do mês (desc)
-            -counter_today.get(p, 0),       # desempate: valor de hoje (desc)
-            -counter_closed_today.get(p, 0),# desempate: fechados (desc)
-            p or ""                         # último critério: ordem alfabética
+            -counter_month.get(p, 0),
+            -counter_today.get(p, 0),
+            -counter_closed_month.get(p, 0),
+            p or ""
         )
     )
 
+    # Larguras automáticas
     col1 = max(len(header_prod), *(len(p or "Sem produto") for p in produtos)) if produtos else len(header_prod)
     col2 = max(len("Mês"), *(len(str(counter_month.get(p, 0))) for p in produtos)) + 1
     col3 = max(len("Ontem"), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 1
     col4 = max(len("Hoje"), *(len(str(counter_today.get(p, 0))) for p in produtos)) + 1
-    col5 = max(len("Fechados"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 1
+    col5 = max(len("Fech. Mês"), *(len(str(counter_closed_month.get(p, 0))) for p in produtos)) + 1
+    col6 = max(len("Fech. Hj"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 1
 
-    header_line = f"{header_prod:<{col1}} {headers[0]:>{col2}} {headers[1]:>{col3}} {headers[2]:>{col4}} {headers[3]:>{col5}}"
-    sep_line = f"{'-'*col1} {'-'*col2} {'-'*col3} {'-'*col4} {'-'*col5}"
+    header_line = (
+        f"{header_prod:<{col1}} "
+        f"{headers[0]:>{col2}} {headers[1]:>{col3}} {headers[2]:>{col4}} "
+        f"{headers[3]:>{col5}} {headers[4]:>{col6}}"
+    )
+    sep_line = f"{'-'*col1} {'-'*col2} {'-'*col3} {'-'*col4} {'-'*col5} {'-'*col6}"
 
     linhas = [header_line, sep_line]
 
     for p in produtos:
+        nome = p or "Sem produto"
         v_mes = counter_month.get(p, 0)
         v_yes = counter_yesterday.get(p, 0)
         v_day = counter_today.get(p, 0)
-        v_cls = counter_closed_today.get(p, 0)
-        nome = p or "Sem produto"
+        v_cls_mes = counter_closed_month.get(p, 0)
+        v_cls_day = counter_closed_today.get(p, 0)
+
         linhas.append(
-            f"{nome:<{col1}} {v_mes:>{col2}} {v_yes:>{col3}} {v_day:>{col4}} {v_cls:>{col5}}"
+            f"{nome:<{col1}} "
+            f"{v_mes:>{col2}} {v_yes:>{col3}} {v_day:>{col4}} "
+            f"{v_cls_mes:>{col5}} {v_cls_day:>{col6}}"
         )
 
     return "```\n" + "\n".join(linhas) + "\n```"
 
+
 # --- Slack ---
-def post_to_slack(counter_month, counter_yesterday, counter_today, counter_closed_today):
+def post_to_slack(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     total_month = sum(counter_month.values())
     total_yest = sum(counter_yesterday.values())
     total_today = sum(counter_today.values())
-    total_closed = sum(counter_closed_today.values())
-    hora_str = datetime.now(TZ).strftime("%d/%m/%Y %H:%M")
-    tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_today)
+    total_closed_month = sum(counter_closed_month.values())
+    total_closed_today = sum(counter_closed_today.values())
 
-    resumo = f"📅 Este Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  |  ✅ Fechados Hj: {total_closed}"
+    hora_str = datetime.now(TZ).strftime("%d/%m/%Y %H:%M")
+    tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today)
+
+    resumo = (
+        f"📅 Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  "
+        f"|  ✅ Fech. Mês: {total_closed_month}  |  ✅ Fech. Hj: {total_closed_today}"
+    )
 
     blocks = [
         {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
-      #  {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
+     #   {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
     ]
@@ -215,15 +232,15 @@ def main():
     tasks_today = fetch_tasks_range(rng["hoje_ini"], rng["agora"])
     counter_today = count_by_product(tasks_today, mode="created")
 
-    # Fechadas hoje
-    tasks_all = fetch_tasks_range(rng["mes_ini"], rng["agora"])
-    counter_closed_today = count_by_product(tasks_all, mode="closed", ini_ms=rng["hoje_ini"], fim_ms=rng["agora"])
+    # Fechadas no mês
+    counter_closed_month = count_by_product(tasks_month, mode="closed", ini_ms=rng["mes_ini"], fim_ms=rng["agora"])
 
-    post_to_slack(counter_month, counter_yest, counter_today, counter_closed_today)
+    # Fechadas hoje
+    counter_closed_today = count_by_product(tasks_month, mode="closed", ini_ms=rng["hoje_ini"], fim_ms=rng["agora"])
+
+    post_to_slack(counter_month, counter_yest, counter_today, counter_closed_month, counter_closed_today)
     print(f"✅ Mensagem enviada ao Slack às {datetime.now(TZ).strftime('%H:%M')}.")
 
 
 if __name__ == "__main__":
     main()
-
-
