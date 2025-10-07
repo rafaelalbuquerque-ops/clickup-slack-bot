@@ -11,7 +11,6 @@ CLICKUP_TOKEN     = os.getenv("CLICKUP_TOKEN")
 CLICKUP_LIST_IDS  = os.getenv("CLICKUP_LIST_IDS", "205073978")
 PRODUCT_FIELD_NAME = "⚫ Produto"
 
-# Caso falte alguma variável obrigatória:
 if not all([SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, CLICKUP_TOKEN]):
     raise RuntimeError("❌ Faltam variáveis de ambiente: verifique os GitHub Secrets.")
 
@@ -57,9 +56,7 @@ def extract_product(task: dict) -> str:
                 order2label[str(o["orderindex"])] = o.get("label") or o.get("name")
 
         if isinstance(val, list):
-            nomes = []
-            for v in val:
-                nomes.append(id2label.get(str(v)) or order2label.get(v) or str(v))
+            nomes = [id2label.get(str(v)) or order2label.get(v) or str(v) for v in val]
             return " / ".join([n for n in nomes if n]) or "Sem produto"
         if val is not None:
             return id2label.get(str(val)) or order2label.get(val) or str(val)
@@ -113,13 +110,13 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
             if fim_ms and closed > fim_ms:
                 continue
         c[prod] += 1
-    return Counter(dict(sorted(c.items(), key=lambda kv: (-kv[1], kv[0] or ""))))
+    return c
 
 
 # --- Tabela ---
 def make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Mês", "Ontem", "Hoje", "Fechados Mês", "Fechados Hoje"]
+    headers = ["Aber. Mês", "Ontem", "Hoje", "Fech. Mês", "Fech. Hj"]
 
     produtos = sorted(
         set(counter_month.keys())
@@ -129,7 +126,6 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_m
         | set(counter_closed_today.keys())
     )
 
-    # ✅ Ordena do MAIOR para o MENOR com base em "Abertos Mês"
     produtos = sorted(
         produtos,
         key=lambda p: (
@@ -140,13 +136,13 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_m
         )
     )
 
-    # Ajuste automático das colunas para alinhamento perfeito
+    # Larguras automáticas ajustadas
     col1 = max(len(header_prod), *(len(p or "Sem produto") for p in produtos)) if produtos else len(header_prod)
-    col2 = max(len("Abertos Mês"), *(len(str(counter_month.get(p, 0))) for p in produtos)) + 2
-    col3 = max(len("Abertos Ontem"), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 2
-    col4 = max(len("Abertos Hoje"), *(len(str(counter_today.get(p, 0))) for p in produtos)) + 2
-    col5 = max(len("Fechados Mês"), *(len(str(counter_closed_month.get(p, 0))) for p in produtos)) + 2
-    col6 = max(len("Fechados Hoje"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 2
+    col2 = max(len(headers[0]), *(len(str(counter_month.get(p, 0))) for p in produtos)) + 2
+    col3 = max(len(headers[1]), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 2
+    col4 = max(len(headers[2]), *(len(str(counter_today.get(p, 0))) for p in produtos)) + 2
+    col5 = max(len(headers[3]), *(len(str(counter_closed_month.get(p, 0))) for p in produtos)) + 2
+    col6 = max(len(headers[4]), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 2
 
     header_line = (
         f"{header_prod:<{col1}} "
@@ -164,7 +160,6 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_m
         v_day = counter_today.get(p, 0)
         v_cls_mes = counter_closed_month.get(p, 0)
         v_cls_day = counter_closed_today.get(p, 0)
-
         linhas.append(
             f"{nome:<{col1}} "
             f"{v_mes:>{col2}} {v_yes:>{col3}} {v_day:>{col4}} "
@@ -186,13 +181,13 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
     tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today)
 
     resumo = (
-        f"📅 Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  "
-        f"|  ✅ Fech. Mês: {total_closed_month}  |  ✅ Fech. Hoje: {total_closed_today}"
+        f"📅 Aber. Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  "
+        f"|  ✅ Fech. Mês: {total_closed_month}  |  ✅ Fech. Hj: {total_closed_today}"
     )
 
     blocks = [
         {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
-    #    {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
+      #  {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
     ]
@@ -213,26 +208,20 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
 def main():
     rng = ranges_ms()
 
-    # --- RESTRIÇÃO DE HORÁRIO ---
     hora_atual = datetime.now(TZ).hour
     if hora_atual < 8 or hora_atual > 20:
         print(f"⏰ {datetime.now(TZ).strftime('%H:%M')} - Fora do horário de envio (08h–20h).")
         return
-    # -----------------------------------------------------------------
 
-    # Abertos no mês
     tasks_month = fetch_tasks_range(rng["mes_ini"], rng["agora"])
     counter_month = count_by_product(tasks_month, mode="created")
 
-    # Abertos ontem
     tasks_yest = fetch_tasks_range(rng["ontem_ini"], rng["ontem_fim"])
     counter_yest = count_by_product(tasks_yest, mode="created")
 
-    # Abertos hoje
     tasks_today = fetch_tasks_range(rng["hoje_ini"], rng["agora"])
     counter_today = count_by_product(tasks_today, mode="created")
 
-    # --- FECHADOS ---
     tasks_all = fetch_tasks_range(rng["mes_ini"], rng["agora"])
     counter_closed_month = count_by_product(tasks_all, mode="closed", ini_ms=rng["mes_ini"], fim_ms=rng["agora"])
 
@@ -245,5 +234,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
