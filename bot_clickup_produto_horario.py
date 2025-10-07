@@ -186,8 +186,8 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
     tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today)
 
     resumo = (
-        f"📅 Abertos Mês: {total_month}  |  📅 Abertos Ontem: {total_yest}  |  📅 Abertos Hoje: {total_today}  "
-        f"|  ✅ Fechados Mês: {total_closed_month}  |  ✅ Fechados Hoje: {total_closed_today}"
+        f"📅 Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  "
+        f"|  ✅ Fech. Mês: {total_closed_month}  |  ✅ Fech. Hoje: {total_closed_today}"
     )
 
     blocks = [
@@ -245,3 +245,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
