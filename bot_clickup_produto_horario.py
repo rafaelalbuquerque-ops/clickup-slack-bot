@@ -167,8 +167,8 @@ def post_to_slack(counter_yesterday, counter_day, counter_hour, counter_closed_t
     resumo = f"📅 Ontem: {total_yest}  |  📅 Hoje: {total_day}  |  🕐 Hora: {total_hour}  |  ✅ Fechados: {total_closed}"
 
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks por Produto"}},
-        {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Fortaleza)"}]},
+        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
+       # {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Fortaleza)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
         {"type": "divider"},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
@@ -218,3 +218,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
