@@ -119,7 +119,7 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
 # --- Tabela ---
 def make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Mês", "Ontem", "Hoje", "Fech. Mês", "Fech. Hj"]
+    headers = ["Abertos Mês", "Abertos Ontem", "Abertos Hoje", "Fechados Mês", "Fechados Hoje"]
 
     produtos = sorted(
         set(counter_month.keys())
@@ -129,7 +129,7 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_m
         | set(counter_closed_today.keys())
     )
 
-    # ✅ Ordena do MAIOR para o MENOR com base em "Mês"
+    # ✅ Ordena do MAIOR para o MENOR com base em "Abertos Mês"
     produtos = sorted(
         produtos,
         key=lambda p: (
@@ -140,13 +140,13 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_m
         )
     )
 
-    # Larguras automáticas
+    # Ajuste automático das colunas para alinhamento perfeito
     col1 = max(len(header_prod), *(len(p or "Sem produto") for p in produtos)) if produtos else len(header_prod)
-    col2 = max(len("Mês"), *(len(str(counter_month.get(p, 0))) for p in produtos)) + 1
-    col3 = max(len("Ontem"), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 1
-    col4 = max(len("Hoje"), *(len(str(counter_today.get(p, 0))) for p in produtos)) + 1
-    col5 = max(len("Fech. Mês"), *(len(str(counter_closed_month.get(p, 0))) for p in produtos)) + 1
-    col6 = max(len("Fech. Hj"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 1
+    col2 = max(len("Abertos Mês"), *(len(str(counter_month.get(p, 0))) for p in produtos)) + 2
+    col3 = max(len("Abertos Ontem"), *(len(str(counter_yesterday.get(p, 0))) for p in produtos)) + 2
+    col4 = max(len("Abertos Hoje"), *(len(str(counter_today.get(p, 0))) for p in produtos)) + 2
+    col5 = max(len("Fechados Mês"), *(len(str(counter_closed_month.get(p, 0))) for p in produtos)) + 2
+    col6 = max(len("Fechados Hoje"), *(len(str(counter_closed_today.get(p, 0))) for p in produtos)) + 2
 
     header_line = (
         f"{header_prod:<{col1}} "
@@ -186,13 +186,13 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
     tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_month, counter_closed_today)
 
     resumo = (
-        f"📅 Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  "
-        f"|  ✅ Fech. Mês: {total_closed_month}  |  ✅ Fech. Hj: {total_closed_today}"
+        f"📅 Abertos Mês: {total_month}  |  📅 Abertos Ontem: {total_yest}  |  📅 Abertos Hoje: {total_today}  "
+        f"|  ✅ Fechados Mês: {total_closed_month}  |  ✅ Fechados Hoje: {total_closed_today}"
     )
 
     blocks = [
-        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
-     #   {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
+        {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks por Produto"}},
+    #    {"type": "context", "elements": [{"type": "mrkdwn", "text": f"*{hora_str}* (America/Sao_Paulo)"}]},
         {"type": "section", "text": {"type": "mrkdwn", "text": resumo}},
         {"type": "section", "text": {"type": "mrkdwn", "text": tabela}},
     ]
@@ -220,23 +220,22 @@ def main():
         return
     # -----------------------------------------------------------------
 
-    # Abertas no mês
+    # Abertos no mês
     tasks_month = fetch_tasks_range(rng["mes_ini"], rng["agora"])
     counter_month = count_by_product(tasks_month, mode="created")
 
-    # Ontem
+    # Abertos ontem
     tasks_yest = fetch_tasks_range(rng["ontem_ini"], rng["ontem_fim"])
     counter_yest = count_by_product(tasks_yest, mode="created")
 
-    # Hoje
+    # Abertos hoje
     tasks_today = fetch_tasks_range(rng["hoje_ini"], rng["agora"])
     counter_today = count_by_product(tasks_today, mode="created")
 
-    # Fechadas no mês
+    # --- FECHADOS ---
     tasks_all = fetch_tasks_range(rng["mes_ini"], rng["agora"])
     counter_closed_month = count_by_product(tasks_all, mode="closed", ini_ms=rng["mes_ini"], fim_ms=rng["agora"])
 
-    # Fechadas hoje (consulta independente do mês de criação)
     tasks_recent = fetch_tasks_range(rng["ontem_ini"], rng["agora"])
     counter_closed_today = count_by_product(tasks_recent, mode="closed", ini_ms=rng["hoje_ini"], fim_ms=rng["agora"])
 
@@ -246,4 +245,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
