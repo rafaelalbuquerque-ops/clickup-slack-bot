@@ -119,7 +119,7 @@ def count_by_product(tasks, mode="created", ini_ms=None, fim_ms=None):
 # --- Tabela ---
 def make_table(counter_month, counter_yesterday, counter_today, counter_closed_today):
     header_prod = "Produto"
-    headers = ["Mês", "Ontem", "Hoje", "Fechados"]
+    headers = ["Este Mês", "Ontem", "Hoje", "Fechados Hj"]
 
     produtos = sorted(
         set(counter_month.keys())
@@ -128,14 +128,14 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_t
         | set(counter_closed_today.keys())
     )
 
-    # Ordena do MAIOR para o MENOR com base em "Hoje"
+    # ✅ Ordena do MAIOR para o MENOR com base em "Mês"
     produtos = sorted(
         produtos,
         key=lambda p: (
-            -counter_today.get(p, 0),
-            -counter_month.get(p, 0),
-            -counter_closed_today.get(p, 0),
-            p or ""
+            -counter_month.get(p, 0),       # principal: valor do mês (desc)
+            -counter_today.get(p, 0),       # desempate: valor de hoje (desc)
+            -counter_closed_today.get(p, 0),# desempate: fechados (desc)
+            p or ""                         # último critério: ordem alfabética
         )
     )
 
@@ -162,7 +162,6 @@ def make_table(counter_month, counter_yesterday, counter_today, counter_closed_t
 
     return "```\n" + "\n".join(linhas) + "\n```"
 
-
 # --- Slack ---
 def post_to_slack(counter_month, counter_yesterday, counter_today, counter_closed_today):
     total_month = sum(counter_month.values())
@@ -172,7 +171,7 @@ def post_to_slack(counter_month, counter_yesterday, counter_today, counter_close
     hora_str = datetime.now(TZ).strftime("%d/%m/%Y %H:%M")
     tabela = make_table(counter_month, counter_yesterday, counter_today, counter_closed_today)
 
-    resumo = f"📅 Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  |  ✅ Fechados Hj: {total_closed}"
+    resumo = f"📅 Este Mês: {total_month}  |  📅 Ontem: {total_yest}  |  📅 Hoje: {total_today}  |  ✅ Fechados Hj: {total_closed}"
 
     blocks = [
         {"type": "header", "text": {"type": "plain_text", "text": "📊 Tasks Abertas"}},
@@ -226,3 +225,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
