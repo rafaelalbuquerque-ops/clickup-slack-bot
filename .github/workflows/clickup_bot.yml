@@ -1,13 +1,13 @@
-name: ClickUp Slack Bot (hourly)
+name: ClickUp Slack Bot (scheduled)
 
 on:
   schedule:
-    # Executa às 09:30, 13:30, 17:30 e 20:30 (horário de Brasília / UTC-3)
-    - cron: '30 12 * * *'  # 09:30 BRT → UTC = +3
-    - cron: '30 16 * * *'  # 13:30 BRT
-    - cron: '30 20 * * *'  # 17:30 BRT
-    - cron: '30 23 * * *'  # 20:30 BRT
-  workflow_dispatch:
+    # Executa 10 minutos antes do horário desejado (para compensar fila do GitHub Actions)
+    - cron: '20 12 * * *'  # 09:20 BRT → chega ~09:30
+    - cron: '20 16 * * *'  # 13:20 BRT → chega ~13:30
+    - cron: '20 20 * * *'  # 17:20 BRT → chega ~17:30
+    - cron: '20 23 * * *'  # 20:20 BRT → chega ~20:30
+  workflow_dispatch: # permite execução manual também
 
 jobs:
   run-bot:
@@ -15,24 +15,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: |
-          pip install requests pytz
+        run: pip install requests pytz
 
-      - name: Run ClickUp Bot
+      - name: Run Slack bot
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
           CLICKUP_TOKEN: ${{ secrets.CLICKUP_TOKEN }}
           CLICKUP_LIST_IDS: ${{ secrets.CLICKUP_LIST_IDS }}
-        run: |
-          echo "🕐 Iniciando execução em $(date -u) UTC / $(TZ='America/Sao_Paulo' date) BR"
-          python bot_clickup_produto_horario.py
-          echo "✅ Finalizado em $(date -u) UTC / $(TZ='America/Sao_Paulo' date) BR"
+        run: python bot_clickup_produto_horario.py
