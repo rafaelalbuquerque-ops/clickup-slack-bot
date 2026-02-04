@@ -9,7 +9,7 @@ SLACK_BOT_TOKEN   = os.getenv("SLACK_BOT_TOKEN")
 SLACK_CHANNEL_ID  = os.getenv("SLACK_CHANNEL_ID")
 CLICKUP_TOKEN     = os.getenv("CLICKUP_TOKEN")
 CLICKUP_LIST_IDS  = os.getenv("CLICKUP_LIST_IDS", "205073978")
-PRODUCT_FIELD_NAME = "⚫ Produto"
+PRODUCT_FIELD_NAME = "👤 Produto"
 
 if not all([SLACK_BOT_TOKEN, SLACK_CHANNEL_ID, CLICKUP_TOKEN]):
     raise RuntimeError("❌ Faltam variáveis de ambiente: verifique os GitHub Secrets.")
@@ -234,5 +234,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
